@@ -78,7 +78,15 @@ namespace TokenPay.BgServices
                             .WithTimeout(15);
                         var resultBlockNumber = await reqBlockNumber
                             .GetJsonAsync<BaseResponse<string>>();
-                        var NowBlockNumber = Convert.ToInt32(resultBlockNumber.Result, 16);
+                        var NowBlockNumber = 0;
+                        try
+                        {
+                            NowBlockNumber = Convert.ToInt32(resultBlockNumber.Result, 16);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(e, "{coin}查询最新区块数失败，返回：{result}", Currency, resultBlockNumber?.Result);
+                        }
                         #endregion
 
                         #region 检查订单
