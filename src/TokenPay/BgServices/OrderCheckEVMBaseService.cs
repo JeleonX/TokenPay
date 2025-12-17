@@ -47,7 +47,7 @@ namespace TokenPay.BgServices
                         .Distinct()
                         .ToListAsync(x => x.ToAddress);
 
-                    var BaseUrl = chain.ApiHost;
+                    var BaseUrl = chain.ApiHost ?? "https://api.etherscan.io/v2/";
 
                     foreach (var address in Address)
                     {
@@ -66,6 +66,7 @@ namespace TokenPay.BgServices
                         #region 查询最新区块数
                         var queryBlockNumber = new Dictionary<string, object>
                         {
+                            { "chainid", chain.ChainId },
                             { "module", "proxy" },
                             { "action", "eth_blockNumber" }
                         };
@@ -77,7 +78,15 @@ namespace TokenPay.BgServices
                             .WithTimeout(15);
                         var resultBlockNumber = await reqBlockNumber
                             .GetJsonAsync<BaseResponse<string>>();
-                        var NowBlockNumber = Convert.ToInt32(resultBlockNumber.Result, 16);
+                        var NowBlockNumber = 0;
+                        try
+                        {
+                            NowBlockNumber = Convert.ToInt32(resultBlockNumber.Result, 16);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(e, "{coin}查询最新区块数失败，返回：{result}", Currency, resultBlockNumber?.Result);
+                        }
                         #endregion
 
                         #region 检查订单
@@ -127,6 +136,7 @@ namespace TokenPay.BgServices
                         #region 外部交易
                         var query = new Dictionary<string, object>
                         {
+                            { "chainid", chain.ChainId },
                             { "module", "account" },
                             { "action", "txlist" },
                             { "address", address },
@@ -172,6 +182,7 @@ namespace TokenPay.BgServices
                         #region 内部交易
                         var queryInternal = new Dictionary<string, object>
                         {
+                            { "chainid", chain.ChainId },
                             { "module", "account" },
                             { "action", "txlistinternal" },
                             { "address", address },
